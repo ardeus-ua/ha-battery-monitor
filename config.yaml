@@ -8,6 +8,8 @@ arch:
   - amd64
   - armhf
   - armv7
+build_args:
+  ARCH: "{{ arch }}"
 startup: application
 stage: stable
 panel_icon: mdi:battery-charging
