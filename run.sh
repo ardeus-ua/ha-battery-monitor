@@ -14,7 +14,7 @@ export SHARED_CREDS_FILE=/share/tunnel_creds.json
 echo "Starting Flask server on port 8099 in background..."
 python3 /app/app.py &
 
-# Зберігаємо PID Flask-сервера
+# ЗБЕРЕЖЕННЯ PID: Це критично для коректної роботи 'wait' і 'kill'.
 FLASK_PID=$!
 
 # ----------------------------------------------------------------
@@ -25,7 +25,8 @@ FLASK_PID=$!
 if [ -z "$CLOUDFLARED_TUNNEL_ID" ] || [ -z "$TUNNEL_DOMAIN" ]; then
     echo "WARNING: Cloudflare Tunnel secrets (ID and DOMAIN) are not set."
     echo "Skipping tunnel startup. Access the web interface via http://<HA_IP>:8099."
-    wait $FLASK_PID
+    # Якщо тунель не запускається, чекаємо Flask і виходимо
+    wait $FLASK_PID 
     exit $?
 fi
 
