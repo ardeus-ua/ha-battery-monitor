@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y wget ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Копіюємо Python-код та конфіг cloudflared
-COPY app.py /app/
-COPY cloudflared.yml /etc/cloudflared/config.yml
+COPY battery_server/app.py /app/app.py
+COPY battery_server/cloudflared.yml /etc/cloudflared/config.yml
 
 # Порт Flask-сервера
 EXPOSE 8099
