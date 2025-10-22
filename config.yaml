@@ -1,24 +1,27 @@
 name: Battery Status Viewer (Local + Cloudflare Tunnel)
-version: "1.0.1"
+version: "1.0.2"
 slug: local_battery_viewer_tunnel
-description: Локальний адаптивний переглядач рівня заряду через Cloudflare Tunnel.
-url: https://github.com/ardeus-ua/ha-battery-monitor-addon
+description: Локальний адаптивний переглядач рівня заряду трьох систем через Cloudflare Tunnel.
+url: https://github.com/ardeus-ua/ha-battery-monitor
 arch:
   - aarch64
   - amd64
   - armhf
   - armv7
-build_args:
-  ARCH: "{{ arch }}"
-startup: application
+startup: application 
 stage: stable
 panel_icon: mdi:battery-charging
 map:
-  - share: rw
+  - share: rw # Дозволяє доступ до /share для creds.json
 ports:
-  8099/tcp: 8099 # Flask-сервер
+  8099/tcp: 8099 # Внутрішній порт Flask
+host_network: true # Рекомендовано для Cloudflare Tunnel
 schema:
-  log_level: list(debug|info|warning|error|fatal)?
   tunnel_domain: str # Домен, який буде використовувати тунель (наприклад, battery.mydomain.com)
+  log_level: list(debug|info|warning|error|fatal)?
 secrets:
-  - CLOUDFLARED_TOKEN # Токен авторизації Cloudflared
+  - CLOUDFLARED_TUNNEL_ID # ID вашого тунелю
+
+# Аргументи збірки Docker для автоматичного визначення архітектури cloudflared
+build_args:
+  ARCH: "{{ arch }}"
