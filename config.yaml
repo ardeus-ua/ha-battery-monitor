@@ -2,7 +2,7 @@ name: Battery Status Viewer (Local + Cloudflare Tunnel)
 version: "1.0.1"
 slug: local_battery_viewer_tunnel
 description: Локальний адаптивний переглядач рівня заряду через Cloudflare Tunnel.
-url: https://github.com/your-username/ha-battery-monitor-addon
+url: https://github.com/ardeus-ua/ha-battery-monitor-addon
 arch:
   - aarch64
   - amd64
