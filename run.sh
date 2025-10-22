@@ -5,6 +5,8 @@ echo "Starting HA Battery Monitor Addon with Cloudflare Tunnel..."
 # Шляхи
 export DATA_FILE=/share/battery_data.json
 export CONFIG_FILE=/etc/cloudflared/config.yml
+# Шлях до файлу облікових даних, який користувач повинен покласти у /share
+export SHARED_CREDS_FILE=/share/tunnel_creds.json 
 
 # ----------------------------------------------------------------
 # 1. Запуск Flask-сервера
@@ -19,33 +21,36 @@ FLASK_PID=$!
 # 2. Налаштування та запуск Cloudflare Tunnel
 # ----------------------------------------------------------------
 
-# Перевірка наявності токена
-if [ -z "$CLOUDFLARED_TOKEN" ]; then
-    echo "ERROR: Cloudflared token (CLOUDFLARED_TOKEN) is not set in secrets!"
+# Перевірка наявності необхідних змінних
+if [ -z "$CLOUDFLARED_TUNNEL_ID" ] || [ -z "$TUNNEL_DOMAIN" ]; then
+    echo "WARNING: Cloudflare Tunnel secrets (ID and DOMAIN) are not set."
+    echo "Skipping tunnel startup. Access the web interface via http://<HA_IP>:8099."
+    wait $FLASK_PID
+    exit $?
+fi
+
+export TUNNEL_ID=$CLOUDFLARED_TUNNEL_ID 
+
+# Перевірка наявності файлу облікових даних
+if [ ! -f "$SHARED_CREDS_FILE" ]; then
+    echo "ERROR: Cloudflare credentials file not found at $SHARED_CREDS_FILE."
+    echo "Будь ласка, розмістіть файл creds.json у папці /share/ та перейменуйте його на tunnel_creds.json."
+    kill $FLASK_PID
     exit 1
 fi
 
-# Отримуємо ID тунелю, якщо він існує
-if [ -f /etc/cloudflared/creds.json ]; then
-    export TUNNEL_ID=$(jq -r '.TunnelID' /etc/cloudflared/creds.json)
-    if [ -z "$TUNNEL_ID" ] || [ "$TUNNEL_ID" == "null" ]; then
-        echo "ERROR: Tunnel ID could not be extracted from creds.json."
-        exit 1
-    fi
-else
-    echo "ERROR: Cloudflared credentials file not found. Did you set it up correctly?"
-    echo "You must manually place the creds.json file in the addon's /share/ folder."
-    exit 1
-fi
+echo "Tunnel ID: $TUNNEL_ID"
+echo "Tunnel Domain: $TUNNEL_DOMAIN"
 
-echo "Tunnel ID found: $TUNNEL_ID"
+# 1. Створення папки та копіювання облікових даних
+mkdir -p /etc/cloudflared/
+cp "$SHARED_CREDS_FILE" /etc/cloudflared/creds.json 
 
-# Замінюємо плейсхолдери у конфігураційному файлі cloudflared.yml
+# 2. Заміна плейсхолдерів у конфігураційному файлі cloudflared.yml
 sed -i "s/\${TUNNEL_ID}/$TUNNEL_ID/" $CONFIG_FILE
 sed -i "s/\${TUNNEL_DOMAIN}/$TUNNEL_DOMAIN/" $CONFIG_FILE
 
 echo "Starting Cloudflared Tunnel..."
 
-# Запускаємо cloudflared. Використовуємо exec для того, щоб cloudflared 
-# став головним процесом, і Supervisor міг контролювати контейнер.
-exec cloudflared tunnel run
+# Запускаємо cloudflared як головний процес
+exec cloudflared tunnel run --config $CONFIG_FILE
