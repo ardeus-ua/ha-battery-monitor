@@ -1,0 +1,9 @@
+# battery_server/cloudflared.yml
+tunnel: ${TUNNEL_ID} # Буде встановлено з environment
+credentials-file: /etc/cloudflared/creds.json
+
+ingress:
+  # Маршрутизація запитів із тунелю на локальний Flask-сервер (порт 8099)
+  - hostname: ${TUNNEL_DOMAIN}
+    service: http://localhost:8099
+  - service: http_status:404
